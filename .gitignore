@@ -1,0 +1,26 @@
+# Real secrets must never enter this tree -- the lab exists to leak fake ones.
+.env
+.env.*
+*.pem
+*.key
+!test_cases/**/*.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Agent artifacts -- these are where the leaks actually land.
+*.sqlite
+*.sqlite3
+*.db
+*_checkpoints.json
+lab_transcripts/
+lab_outputs/
+n8n/.n8n/
+
+# OS
+.DS_Store

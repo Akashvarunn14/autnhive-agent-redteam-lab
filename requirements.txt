@@ -1,0 +1,44 @@
+# AI Agent Red-Team Lab -- INTENTIONALLY UNPINNED / UNDER-FLOORED DEPENDENCIES.
+#
+# Every version below is a FLOOR, not a pin, and several floors sit below the first
+# patched release of a known CVE. That is VULN-DEP-01 in test_cases/dependency_risk.md.
+#
+# To reproduce the lab, install as-is.
+# To fix the lab, generate a lockfile:  pip-compile --generate-hashes requirements.in
+# To find the current exposure:     pip-audit -r requirements.txt
+#                                   safety check --full-report -r requirements.txt
+
+# ---------------------------------------------------------------- core (required)
+# [VULN-DEP-02] No upper bound and no hashes: a supply-chain compromise or a yanked
+# release is accepted silently on the next `pip install`.
+openai>=1.40
+httpx>=0.27
+requests>=2.32
+python-dotenv>=1.0
+
+# ------------------------------------------------------------------ framework targets
+# Install only the one you are attacking; the crewai and pyautogen trees are huge and
+# conflict with each other more often than not.
+
+# LangGraph target. 0.2.x is EOL: VULN-DEP-03.
+langgraph>=0.2.28,<0.3
+langchain-core>=0.3.0
+langchain-openai>=0.1.23
+
+# CrewAI target. CrewAI pulls in its own langchain pin; this floor is below the
+# releases that added tool-input validation. VULN-DEP-04.
+crewai>=0.80
+
+# AutoGen target. 0.2.x pins to pydantic v1 shims and an unaudited code-executor
+# default. VULN-DEP-05.
+pyautogen>=0.2.34,<0.3
+
+# n8n is not a Python dependency. The workflow in n8n/workflow.json targets the node
+# set shipped by the docker tag in the README, which is `n8nio/n8n:latest` -- an
+# unpinned, moving tag. VULN-DEP-06.
+
+# ------------------------------------------------------------------- lab tooling
+# Used by the test cases, not by the vulnerable agents.
+# pytest>=8.0
+# pip-audit>=2.7
+# bandit>=1.7
