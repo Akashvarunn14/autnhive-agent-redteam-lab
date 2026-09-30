@@ -54,6 +54,14 @@ autnhive-agent-redteam-lab/
 │   └── agent.py              # group chat + code executor
 ├── n8n/
 │   └── workflow.json         # webhook-triggered agent with unauthenticated tools
+├── secure/                   # the FIXED counterpart of every file above
+│   ├── README.md             # ID-by-ID mapping of each fix
+│   ├── langgraph/agent.py
+│   ├── crewai/agent.py
+│   ├── openai/basic_agent.py
+│   ├── openai/tool_agent.py
+│   ├── autogen/agent.py
+│   └── n8n/workflow.json
 └── test_cases/
     ├── prompt_injection.md   # direct + indirect injection
     ├── excessive_tools.md    # tool sprawl, least privilege, ind. prompt injection
@@ -62,6 +70,15 @@ autnhive-agent-redteam-lab/
     ├── memory_poisoning.md   # checkpoint poisoning, cross-tenant reads, HITL tamper
     └── dependency_risk.md    # version floors, known CVEs, supply chain
 ```
+
+### Why `secure/` exists
+
+A scanner flagging a vulnerability in a vulnerable file has told you nothing. The results
+worth reporting come from the other two outcomes: a **false positive** (flagged in
+`secure/`, where the weakness is absent) and a **false negative** (missed in the root
+files). Because each `secure/` file differs from its counterpart only by the fix, `diff` is
+the evidence, and a false positive becomes self-proving. See
+[`secure/README.md`](secure/README.md).
 
 ---
 
@@ -183,10 +200,31 @@ severity.** Run them in order; the payload sets escalate.
    worked — the value of a red-team report is a reproduction, not a category.
 4. **Escalate, do not stop.** A prompt-injection hit that returns a credential in the
    transcript is three findings: injection, secret exposure, and no output filtering.
-5. **Write it up** with the `VULN-xx` id, the file and line, the payload, the impact, and the
+5. **Scan the `secure/` counterpart too.** That is where the reportable results are.
+6. **Write it up** with the `VULN-xx` id, the file and line, the payload, the impact, and the
    one-line fix.
-6. **Then fix it** in a `secure/` branch and re-run the test case. A finding you cannot
-   verify as fixed is not closed.
+7. **Then fix it** and re-run the test case. A finding you cannot verify as fixed is not
+   closed. The `secure/` files are those fixes, already made.
+
+---
+
+## Using this repo as a scanner test corpus
+
+If you are pointing an automated scanner at this repository, the shape above is
+deliberate: six frameworks, a fixed counterpart for each, and 51 labelled findings to check
+against. Useful things to measure:
+
+| Measurement | Where to look |
+|---|---|
+| Recall | `VULN-xx` ids in the root files that got no finding |
+| Precision | findings reported in `secure/` where no weakness exists |
+| Localization | findings whose cited file or line does not contain the weakness |
+| Severity calibration | a `VULN-OA-05` (no redaction) rated against a `VULN-OA-07` (verbose error) |
+| Noise | findings with no `VULN-xx` counterpart at all |
+
+Note the two dependency findings (`VULN-DEP-*`) are the exception: they are true of the
+`secure/` files too, because the `requirements.txt` floors are unchanged. A scanner that
+reports those on both halves is correct, not noisy.
 
 ---
 
@@ -208,7 +246,9 @@ Every target has the same four missing layers. A fix is not a patch, it is addin
 ## Extending the lab
 
 * **Add a target:** drop `framework/agent.py` next to its siblings, keep the `VULN-xx`
-  comment markers, and add the ID to the index above.
+  comment markers, and add the ID to the index above. Then add the fixed counterpart under
+  `secure/framework/agent.py` and a row to `secure/README.md` — a target with no
+  counterpart cannot produce a provable false positive.
 * **Add a test case:** copy the shape of an existing file, add a row to both index tables.
 * **Automate:** the payloads in `test_cases/*.md` are plain strings. They are deliberately
   framework-agnostic so a harness can lift them verbatim into an API call.
